@@ -6,131 +6,226 @@
 <title>Labour India</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #f1f4f9;
+body{margin:0;font-family:Arial;background:#f1f4f9}
+header{background:#0d47a1;color:#fff;padding:10px;text-align:center}
+header img{height:45px;vertical-align:middle}
+header span{font-size:20px;font-weight:bold;margin-left:10px}
+
+.banner{background:linear-gradient(45deg,#0d47a1,#1976d2);color:#fff;padding:18px;text-align:center}
+
+.container{padding:15px;max-width:900px;margin:auto}
+.card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.08);margin-bottom:15px}
+
+input,select,textarea{
+width:100%;padding:12px;margin-top:12px;border-radius:10px;border:1px solid #ddd
 }
 
-header {
-  background: #0d47a1;
-  color: white;
-  padding: 12px;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
+button{
+width:100%;padding:14px;margin-top:15px;background:#0d47a1;color:#fff;border:none;border-radius:10px;font-size:16px;cursor:pointer
+}
+button:hover{background:#08306b}
+
+#status{margin-top:10px;font-weight:bold}
+
+.note{color:green;font-size:14px;display:none}
+
+/* Admin */
+.admin{display:none}
+.booking{
+border:1px solid #ddd;padding:10px;border-radius:10px;margin-top:10px
+}
+.status{font-weight:bold}
+
+.actions button{
+width:auto;margin-right:5px;margin-top:8px;padding:6px 10px;font-size:13px
 }
 
-.container {
-  padding: 15px;
-}
-
-.card {
-  background: white;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-}
-
-button {
-  width: 100%;
-  padding: 14px;
-  margin-top: 15px;
-  background: #0d47a1;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 17px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #08306b;
+.filter{
+display:flex;gap:10px;margin-bottom:10px
 }
 </style>
-
 </head>
 
 <body>
 
-<header>Labour India 🇮🇳</header>
+<header>
+  <img src="logo.jpg">
+  <span>Labour India 🇮🇳</span>
+</header>
+
+<div class="banner">Skilled Workers at Your Doorstep 🔧⚡</div>
 
 <div class="container">
-  <div class="card">
 
-    <h3>Book Service</h3>
+<!-- USER PANEL -->
+<div class="card">
+<h3>Book Service</h3>
 
-    <input type="text" id="name" placeholder="Your Name">
-    <input type="text" id="location" placeholder="Enter Location">
+<input type="text" id="name" placeholder="Your Name">
+<input type="text" id="location" placeholder="Enter Location">
 
-    <select id="category">
-      <option value="">Select Service</option>
-      <option value="Electrician">Electrician</option>
-      <option value="Plumber">Plumber</option>
-      <option value="Maid">Maid</option>
-      <option value="Mistri">Mistri</option>
-      <option value="Fitter">Fitter</option>
-      <option value="Dhobi">Dhobi</option>
-    </select>
+<select id="category" onchange="handleCategory()">
+<option value="">Select Service</option>
+<option>Electrician</option>
+<option>Plumber</option>
+<option>Maid</option>
+<option>Mistri</option>
+<option>Fitter</option>
+<option>Dhobi</option>
+</select>
 
-    <textarea id="details" placeholder="Work details"></textarea>
+<p id="maidNote" class="note">Only female maids will be assigned 👩</p>
 
-    <button onclick="bookLabour()">Book Now</button>
+<textarea id="details" placeholder="Work details"></textarea>
 
-    <p id="status" style="margin-top:10px;color:green;"></p>
+<button onclick="bookLabour()">Book Now</button>
 
-  </div>
+<p id="status"></p>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="card">
+<h3>Admin Panel</h3>
+<input type="password" id="adminPass" placeholder="Enter Admin Password">
+<button onclick="loginAdmin()">Login</button>
+</div>
+
+<!-- ADMIN DATA -->
+<div class="card admin" id="adminPanel">
+
+<h3>Bookings</h3>
+
+<div class="filter">
+<select id="filter" onchange="loadBookings()">
+<option value="all">All</option>
+<option value="pending">Pending</option>
+<option value="accepted">Accepted</option>
+<option value="done">Done</option>
+</select>
+</div>
+
+<div id="bookingList"></div>
+
+</div>
+
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDnKnye9eVcaX2B84HVaTElXTIgOKz6SDA",
-  authDomain: "labour-india-4746e.firebaseapp.com",
-  projectId: "labour-india-4746e",
-  storageBucket: "labour-india-4746e.firebasestorage.app",
-  messagingSenderId: "241559783436",
-  appId: "1:241559783436:web:b867e149f0f0fcd1bf4629",
-  databaseURL: "https://labour-india-4746e-default-rtdb.asia-southeast1.firebasedatabase.app/"
+apiKey: "AIzaSyDnKnye9eVcaX2B84HVaTElXTIgOKz6SDA",
+authDomain: "labour-india-4746e.firebaseapp.com",
+projectId: "labour-india-4746e",
+storageBucket: "labour-india-4746e.firebasestorage.app",
+messagingSenderId: "241559783436",
+appId: "1:241559783436:web:b867e149f0f0fcd1bf4629",
+databaseURL: "https://labour-india-4746e-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-window.bookLabour = function() {
+/* CATEGORY */
+window.handleCategory = function(){
+let c = document.getElementById("category").value;
+document.getElementById("maidNote").style.display = c==="Maid"?"block":"none";
+}
 
-  let name = document.getElementById("name").value;
-  let location = document.getElementById("location").value;
-  let category = document.getElementById("category").value;
-  let details = document.getElementById("details").value;
+/* BOOK */
+window.bookLabour = function(){
 
-  if(name === "" || location === "" || category === ""){
-    alert("Fill all required fields");
-    return;
-  }
+let name = nameEl.value;
+let location = locationEl.value;
+let category = categoryEl.value;
+let details = detailsEl.value;
 
-  push(ref(db, "bookings"), {
-    name,
-    location,
-    category,
-    details,
-    status: "pending",
-    time: new Date().toLocaleString()
-  });
+if(!name || !location || !category){
+alert("Fill all fields"); return;
+}
 
-  document.getElementById("status").innerText = "✅ Booking submitted successfully!";
+push(ref(db,"bookings"),{
+name,location,category,details,
+status:"pending",
+time:new Date().toLocaleString()
+});
 
+statusEl.innerText="✅ Booking submitted";
+
+nameEl.value=locationEl.value=detailsEl.value="";
+categoryEl.value="";
+}
+
+/* SHORTCUT */
+const nameEl=document.getElementById("name");
+const locationEl=document.getElementById("location");
+const categoryEl=document.getElementById("category");
+const detailsEl=document.getElementById("details");
+const statusEl=document.getElementById("status");
+
+/* ADMIN LOGIN */
+window.loginAdmin=function(){
+let pass=document.getElementById("adminPass").value;
+
+if(pass==="1234"){ // change later
+document.getElementById("adminPanel").style.display="block";
+loadBookings();
+}else{
+alert("Wrong password");
+}
+}
+
+/* LOAD BOOKINGS */
+window.loadBookings=function(){
+
+let filter=document.getElementById("filter").value;
+let list=document.getElementById("bookingList");
+
+onValue(ref(db,"bookings"),snap=>{
+list.innerHTML="";
+
+snap.forEach(child=>{
+let data=child.val();
+let id=child.key;
+
+if(filter!="all" && data.status!=filter) return;
+
+list.innerHTML+=`
+<div class="booking">
+<b>${data.name}</b> (${data.category})<br>
+📍 ${data.location}<br>
+📝 ${data.details}<br>
+⏱ ${data.time}<br>
+<span class="status">Status: ${data.status}</span>
+
+<div class="actions">
+<button onclick="updateStatus('${id}','accepted')">Accept</button>
+<button onclick="updateStatus('${id}','done')">Done</button>
+<button onclick="deleteBooking('${id}')">Delete</button>
+<button onclick="sendWhatsApp('${data.name}','${data.category}','${data.location}')">WhatsApp</button>
+</div>
+</div>
+`;
+});
+});
+}
+
+/* UPDATE */
+window.updateStatus=function(id,status){
+update(ref(db,"bookings/"+id),{status});
+}
+
+/* DELETE */
+window.deleteBooking=function(id){
+remove(ref(db,"bookings/"+id));
+}
+
+/* WHATSAPP */
+window.sendWhatsApp=function(name,cat,loc){
+let msg=`Booking:\n${name}\n${cat}\n${loc}`;
+window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
 }
 
 </script>

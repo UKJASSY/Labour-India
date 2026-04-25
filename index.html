@@ -29,11 +29,10 @@ header {
   background: white;
   padding: 15px;
   border-radius: 10px;
-  margin-bottom: 15px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
@@ -44,39 +43,17 @@ input, select {
 button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 12px;
   background: #ff6b00;
   color: white;
   border: none;
   border-radius: 8px;
+  font-size: 16px;
   cursor: pointer;
 }
 
-.labour-card {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 15px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-}
-
-.labour-name {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.call-btn {
-  background: green;
-}
-
-.whatsapp-btn {
-  background: #25D366;
+button:hover {
+  background: #e55d00;
 }
 </style>
 
@@ -89,12 +66,14 @@ button {
 <div class="container">
 
   <div class="card">
-    <h3>Find Labour</h3>
+    <h3>Book Service</h3>
+
+    <input type="text" id="name" placeholder="Your Name">
 
     <input type="text" id="location" placeholder="Enter Location">
 
-    <select id="category">
-      <option value="">Select Labour Type</option>
+    <select id="category" onchange="toggleMaidNote()">
+      <option value="">Select Service</option>
       <option value="Electrician">Electrician</option>
       <option value="Plumber">Plumber</option>
       <option value="Maid">Maid</option>
@@ -103,60 +82,53 @@ button {
       <option value="Dhobi">Dhobi</option>
     </select>
 
-    <button onclick="searchLabour()">Search</button>
-  </div>
+    <textarea id="details" placeholder="Work details (optional)"></textarea>
 
-  <div id="results"></div>
+    <p id="maidNote" style="display:none; color:green; font-size:14px;">
+      Only female maids will be assigned 👩
+    </p>
+
+    <button onclick="bookLabour()">Book Now</button>
+
+  </div>
 
 </div>
 
 <script>
 
-const labours = [
-  {name:"Ramesh", work:"Electrician", location:"Delhi", phone:"9876543210"},
-  {name:"Suresh", work:"Plumber", location:"Delhi", phone:"9123456780"},
-  {name:"Amit", work:"Maid", location:"Noida", phone:"9012345678"},
-  {name:"Rahul", work:"Mistri", location:"Delhi", phone:"9988776655"},
-  {name:"Vikas", work:"Fitter", location:"Gurgaon", phone:"8899776655"},
-  {name:"Mohan", work:"Dhobi", location:"Delhi", phone:"8877665544"}
-];
-
-function searchLabour() {
+function toggleMaidNote() {
   let category = document.getElementById("category").value;
-  let resultsDiv = document.getElementById("results");
+  let note = document.getElementById("maidNote");
 
-  resultsDiv.innerHTML = "";
+  if(category === "Maid"){
+    note.style.display = "block";
+  } else {
+    note.style.display = "none";
+  }
+}
 
-  let filtered = labours.filter(l => 
-    (category === "" || l.work === category)
-  );
+function bookLabour() {
+  let name = document.getElementById("name").value;
+  let location = document.getElementById("location").value;
+  let category = document.getElementById("category").value;
+  let details = document.getElementById("details").value;
 
-  if(filtered.length === 0){
-    resultsDiv.innerHTML = "<p>No labour found</p>";
+  if(name === "" || location === "" || category === ""){
+    alert("Please fill all required fields");
     return;
   }
 
-  filtered.forEach(l => {
-    resultsDiv.innerHTML += `
-      <div class="labour-card">
-        <div class="labour-name">${l.name}</div>
-        <div>${l.work} • ${l.location}</div>
+  let message = `Hello, I want to book a service:
 
-        <div class="actions">
-          <button class="call-btn" onclick="call('${l.phone}')">Call</button>
-          <button class="whatsapp-btn" onclick="whatsapp('${l.phone}')">WhatsApp</button>
-        </div>
-      </div>
-    `;
-  });
-}
+Name: ${name}
+Service: ${category}
+Location: ${location}
+Details: ${details}`;
 
-function call(num){
-  window.location.href = "tel:" + num;
-}
+  // 👇 Yaha apna number daal (without +)
+  let phone = "91XXXXXXXXXX";
 
-function whatsapp(num){
-  window.open("https://wa.me/91" + num, "_blank");
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
 </script>
